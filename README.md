@@ -8,3 +8,7 @@ Kenya External Debt Register
 ## Loan Duration by President
 
 ![](README_files/figure-gfm/unnamed-chunk-2-1.png)<!-- -->
+
+## Number of loans by creditor category
+
+![](README_files/figure-gfm/unnamed-chunk-3-1.png)<!-- -->
