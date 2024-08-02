@@ -42,6 +42,7 @@ kenya_presidents <- data.frame(
     start_date = as.Date(c("2022-09-13","2013-04-09", "2002-12-30", "1978-08-22", "1963-12-12")),
     end_date = as.Date(c(Sys.Date(), "2022-09-13", "2013-04-09", "2002-12-30", "1978-08-22"))
 )
+# 2013-04-09 - 2002-12-30
 
 # create a new column to store the president in power at the time of the loan
 public_debt[, president := NA_character_]

@@ -19,7 +19,7 @@ knitr::opts_chunk$set(echo = F,warnings = FALSE, message = FALSE)
 ## Currency Composition of Kenya's External Debt
 
 
-```{r}
+```{r,warnings = FALSE, message = FALSE}
 library(tidyverse)
 library(data.table)
 source("R/functions.R")
@@ -101,9 +101,10 @@ Amount Borrowed by President in 2024 USD
 # financed_amount_2024_usd
 
 amount_2024_usd <- public_debt[, .(amount_2024_usd = sum(financed_amount_2024_usd, na.rm = TRUE)), 
-                                  by = .(president)]
-amount_plot <- ggplot(amount_2024_usd, aes(x = reorder(president, -amount_2024_usd), y = amount_2024_usd/1000000000)) +
+                                  by = .(president, creditor_category)]
+amount_plot <- ggplot(amount_2024_usd, aes(x = reorder(president, -amount_2024_usd), y = amount_2024_usd/1000000000, fill =creditor_category )) +
     geom_col() +
+    scale_fill_manual(values = mycolors) +
     labs(title = "Amount borrowed by president in 2024 Billions USD", x = "President", y = "Amount borrowed") +
     theme_minimal()
 
@@ -111,7 +112,35 @@ amount_plot
 
 ```
 
-### Loans Still to Convert to USD
+## Cummulative debt by president
+- Please note other  cumulative debt might includes interests
+- This graph just looks how much a president borrowed when they were in power. This is external debt
+- The CBK cumulative debt is the total debt that the country has borrowed - payments
+- ***Have you guys checked how many loans EU gave to Kenya on 2002-12-31. First day of Kibaki presidency***
+
+```{r}
+
+
+setorder(public_debt, agreement_date)
+public_debt[, year := year(agreement_date)]
+# Compute the loan index by president within each year and president
+
+# sum by year and president
+public_debt_per_year <- public_debt[, .(financed_amount_usd = sum(financed_amount_2024_usd, na.rm = T)), by = .(president, year)]
+
+public_debt_per_year[, loan_index_by_president := rowid(president)]
+public_debt_per_year[, cummulative_debt := cumsum(financed_amount_usd), by = .(president)]
+
+ggplot(public_debt_per_year, aes(x = loan_index_by_president, y = cummulative_debt/1000000000, color = president)) +
+    geom_line(linewidth = 1) +
+    scale_color_manual(values = mycolors) +
+    labs(title = "Cummulative debt  aquired by president", x = "Year", y = "Amount borrowed (Billion USD)") +
+    theme_minimal()+
+    theme(legend.position = "bottom")
+
+```
+
+## Loans Still to Convert to USD
 
 ```{r}
 public_debt_not_converted <- public_debt[is.na(financed_amount_usd), .(loan_ref_number,creditor_name,agreement_date, org_financed_amount,revised_financed_amount, curr)]

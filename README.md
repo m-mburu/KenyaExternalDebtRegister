@@ -21,6 +21,20 @@ Kenya External Debt Register
 
 ## Currency Composition of Kenya’s External Debt
 
+    ## Warning: package 'ggplot2' was built under R version 4.3.3
+
+    ## Warning: package 'tidyr' was built under R version 4.3.3
+
+    ## Warning: package 'readr' was built under R version 4.3.3
+
+    ## Warning: package 'purrr' was built under R version 4.3.3
+
+    ## Warning: package 'dplyr' was built under R version 4.3.3
+
+    ## Warning: package 'stringr' was built under R version 4.3.3
+
+    ## Warning: package 'lubridate' was built under R version 4.3.3
+
 ![](README_files/figure-gfm/unnamed-chunk-1-1.png)<!-- -->
 
 ## Loan Duration by President
@@ -43,7 +57,19 @@ Amount Borrowed by President in 2024 USD
 
 ![](README_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
 
-### Loans Still to Convert to USD
+## Cummulative debt by president
+
+- Please note other cumulative debt might includes interests
+- This graph just looks how much a president borrowed when they were in
+  power. This is external debt
+- The CBK cumulative debt is the total debt that the country has
+  borrowed - payments
+- ***Have you guys checked how many loans EU gave to Kenya on
+  2002-12-31. First day of Kibaki presidency***
+
+![](README_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
+
+## Loans Still to Convert to USD
 
 | loan_ref_number | creditor_name                         | agreement_date | org_financed_amount | revised_financed_amount | curr |
 |:----------------|:--------------------------------------|:---------------|--------------------:|------------------------:|:-----|
