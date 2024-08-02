@@ -70,13 +70,76 @@ rm_spaces_commas <- function(x) {
     as.numeric(x)
 }
 
+
 public_debt[, (money_cols) := lapply(.SD, rm_spaces_commas), .SDcols = money_cols]
 
-fwrite(public_debt, "data/kenya_public_debt.csv")
+
+### SDR is a special drawing rights
+#install.packages("readODS")
+xdr_curr_df <- readODS::read_ods ("data/raw/SDRV.ods", skip = 2) |>
+    janitor::clean_names() |>
+    setDT()
+#02-Jan-1981
+xdr_curr_df[, report_date := zoo::na.locf(report_date, na.rm = F)]
+xdr_curr_df[, agreement_date := as.Date(report_date, format = "%d-%b-%Y")]
+# u_s_dollar_equivalent
+xdr_curr_df <- xdr_curr_df[exchange_rate == "U.S.$1.00 = SDR"]
+xdr_curr_df[, currency := "XDR"]
+
+xdr_curr_df <- xdr_curr_df[, .(agreement_date, currency,Exchange_Rate = as.numeric(u_s_dollar_equivalent))]
+historical_exchange_rates <- fread("data/raw/historical_exchange_rates.csv")
+
+historical_exchange_rates[, agreement_date := as.Date(paste0(Day_Number,"-", Month_Year), format = "%d-%b - %Y")]
+historical_exchange_rates[, currency := str_trim(gsub("USD to ", "", Currency_Pair))]
+
+historical_exchange_rates <- rbind(historical_exchange_rates, xdr_curr_df, fill = T)
+curr = c("JPK",  "CHF", "SEK", "INR", "GBP", "CAD", "DKK", "EUR", 
+                        "XDR", "SAR", "CNY", "KRW", "AUA", "KWD", "AED")
+
+currency = c("JPY",  "CHF", "SEK", "INR", "GBP", "CAD", "DKK", "EUR", 
+                        "XDR", "SAR", "CNY", "KRW", "AUD", "KWD", "AED")
+curr_dt = data.table(curr = curr, currency = currency)
+
+historical_exchange_rates_curr <- merge(historical_exchange_rates, curr_dt, by = "currency", all.x =T)
+## zoo::na.locf to fill in the missing exchange rates by currency,year, month, week
+#create year month week columns
+historical_exchange_rates_curr[, year := year(agreement_date)]
+historical_exchange_rates_curr[, month := month(agreement_date)]
+historical_exchange_rates_curr[, week := week(agreement_date)]
+
+historical_exchange_rates_curr[, Exchange_Rate := zoo::na.locf(Exchange_Rate, na.rm = F), by = c("currency", "year", "month", "week")]
+historical_exchange_rates_curr[, Exchange_Rate := zoo::na.locf(Exchange_Rate, na.rm = F), by = c("currency", "year", "month")]
+## fill the reminder with the mean of the group if missing
+historical_exchange_rates_curr[, Exchange_Rate := ifelse(is.na(Exchange_Rate), mean(Exchange_Rate, na.rm = T), Exchange_Rate), by = c("currency", "year","month", "week")]
+historical_exchange_rates_curr[, Exchange_Rate := ifelse(is.na(Exchange_Rate), mean(Exchange_Rate, na.rm = T), Exchange_Rate), by = c("currency", "year","month")]
+inflation_data_usd <- fread("data/raw/inflation_data_usd.csv") %>%
+    janitor::clean_names() 
+
+## merge by year
+historical_exchange_rates_curr <- merge(historical_exchange_rates_curr, inflation_data_usd, by = "year", all.x = T)
+
+hist_prices <- historical_exchange_rates_curr[!is.na(Exchange_Rate), .(curr, agreement_date, Exchange_Rate, amount, inflation_rate)] |>
+    distinct(curr, agreement_date, Exchange_Rate, .keep_all = T)
+
+
+public_debt_curr <- merge(public_debt, hist_prices ,
+                          by =c("agreement_date", "curr"), all.x = TRUE, sort = F)
+
+public_debt_curr[curr == "USD", Exchange_Rate := 1]
+
+public_debt_curr[, financed_amount := ifelse(is.na(revised_financed_amount), org_financed_amount, revised_financed_amount)]
+public_debt_curr[, financed_amount_usd := financed_amount/Exchange_Rate]
+## financed_amount IN 2024 USD
+public_debt_curr[, financed_amount_2024_usd := financed_amount_usd * amount]
+public_debt_curr_miss <- public_debt_curr[is.na(Exchange_Rate)]
+public_debt_curr_miss[, day := format(agreement_date, "%A")]
+fwrite(public_debt_curr, "data/kenya_public_debt.csv")
 
 
 
 
+
+stop("check")
 
 ###########################
 

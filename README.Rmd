@@ -7,33 +7,34 @@ output: github_document
 knitr::opts_chunk$set(echo = F,warnings = FALSE, message = FALSE)
 ```
 
+## Steps Taken to Develop Public Debt Register data set
+
+- Navigated to the Kenya National Treasury website and downloaded the public debt register data set.
+- Extracted the data set using python and saved it as a csv file Script: Python/extract_data.py
+- Extracted historical exchange rates data set from the https://www.poundsterlinglive.com/bank-of-england-spot/historical-spot-exchange-rates/usd and saved it as a csv file. Script: Python/historical_currency_data.py
+- Downloaded USD inflation data set from https://www.in2013dollars.com/us/inflation/1980?amount=1 to convert into todays equivalent dollars. 
+- Downloaded IMF SDR data from https://www.imf.org/external/np/fin/data/rms_sdrv.aspx. This will be used to convert XDR currency to USD
+- Used the historical data to convert amounts to dollars and saved the data set as a csv file. Script: R/cleaning.R
+
 ## Currency Composition of Kenya's External Debt
 
 
 ```{r}
 library(tidyverse)
 library(data.table)
+source("R/functions.R")
 
-mycolors <-c("#386CB0", "#F0027F", "#BF5B17", "#1B9E77", "#D95F02", "#7570B3", 
-             "#66A61E", "#E6AB02", "#A6761D", "#C2DF23FF", "#38598CFF", "#482173FF", 
-             "#85D54AFF", "#1E9B8AFF", "#51C56AFF", "#FDE725FF", "#2D708EFF", 
-             "#433E85FF", "#25858EFF", "#440154FF", "#7FC97F", "#BEAED4", 
-             "#FDC086")
 
 public_debt <- fread("data/kenya_public_debt.csv")
-public_debt <- public_debt[!is.na(amount_outstanding_as_at_30_06_2023_fx)]
+#public_debt <- public_debt[!is.na(amount_outstanding_as_at_30_06_2023_fx)]
 number_curr_df = public_debt[, .(number_curr =.N), 
                              by = .(president, curr)]
 
+plot_bar(data = number_curr_df, 
+         x = president, y = number_curr, fill = curr, 
+         title = "Number of loans by president",
+         xlab = "President", ylab = "Number of loans")
 
-p = ggplot(number_curr_df, aes(x = reorder(president, -number_curr), y = number_curr, fill = curr)) +
-    geom_col() +
-    #coord_flip() +
-    scale_fill_manual(values =mycolors) +
-    labs(title = "Number of loans by president", x = "President", y = "Number of loans") +
-    theme_minimal()
-
-p
 ```
 
 
@@ -57,11 +58,62 @@ ggplot(public_debt, aes(x = duration_payment_yrs)) +
 cretor_category_df = public_debt[, .(number =.N), 
                                  by = .(president, creditor_category)]
 
-ggplot(cretor_category_df, aes(x = reorder(president, -number), y = number, fill = creditor_category)) +
+plot_bar(data = cretor_category_df, 
+         x = president, y = number, fill = creditor_category, 
+         title = "Number of loans by president",
+         xlab = "President", ylab = "Number of loans")
+```
+
+
+## Histogram of loan duration by creditor category
+
+```{r}
+
+ggplot(public_debt, aes(x = duration_payment_yrs)) +
+    geom_histogram(binwidth = 1) +
+    facet_wrap(~creditor_category, scales = "free_y") +
+    labs(title = "Loan duration by creditor category", x = "Duration (years)", y = "Count") +
+    theme_minimal()
+```
+
+
+## Amount Borrowed by President in USD
+
+
+```{r}
+
+financed_amount = public_debt[, .(financed_amount_usd = sum(financed_amount_usd, na.rm = TRUE)), 
+                                  by = .(president)]
+
+p = ggplot(financed_amount, aes(x = reorder(president, -financed_amount_usd), y = financed_amount_usd/1000000000)) +
     geom_col() +
-    #coord_flip() +
-    scale_fill_manual(values =mycolors) +
-    labs(title = "Number of loans by Creditor Category", x = "President", y = "Number of loans") +
+   # coord_flip() +
+    labs(title = "Amount borrowed by presidentin Billions USD", x = "President", y = "Amount borrowed") +
+    theme_minimal()
+p
+```
+
+
+Amount Borrowed by President in 2024 USD
+
+```{r}
+
+# financed_amount_2024_usd
+
+amount_2024_usd <- public_debt[, .(amount_2024_usd = sum(financed_amount_2024_usd, na.rm = TRUE)), 
+                                  by = .(president)]
+amount_plot <- ggplot(amount_2024_usd, aes(x = reorder(president, -amount_2024_usd), y = amount_2024_usd/1000000000)) +
+    geom_col() +
+    labs(title = "Amount borrowed by president in 2024 Billions USD", x = "President", y = "Amount borrowed") +
     theme_minimal()
 
+amount_plot
 
+```
+
+### Loans Still to Convert to USD
+
+```{r}
+public_debt_not_converted <- public_debt[is.na(financed_amount_usd), .(loan_ref_number,creditor_name,agreement_date, org_financed_amount,revised_financed_amount, curr)]
+knitr::kable(public_debt_not_converted)
+```
