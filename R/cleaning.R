@@ -88,7 +88,11 @@ xdr_curr_df <- xdr_curr_df[exchange_rate == "U.S.$1.00 = SDR"]
 xdr_curr_df[, currency := "XDR"]
 
 xdr_curr_df <- xdr_curr_df[, .(agreement_date, currency,Exchange_Rate = as.numeric(u_s_dollar_equivalent))]
+
 historical_exchange_rates <- fread("data/raw/historical_exchange_rates.csv")
+names(historical_exchange_rates)
+# "Currency_Pair" "Day_Number"    "Month_Year"    "Exchange_Rate"
+historical_exchange_rates <- unique(historical_exchange_rates, by = c("Currency_Pair", "Day_Number", "Month_Year"))
 
 historical_exchange_rates[, agreement_date := as.Date(paste0(Day_Number,"-", Month_Year), format = "%d-%b - %Y")]
 historical_exchange_rates[, currency := str_trim(gsub("USD to ", "", Currency_Pair))]
@@ -107,26 +111,49 @@ historical_exchange_rates_curr <- merge(historical_exchange_rates, curr_dt, by =
 historical_exchange_rates_curr[, year := year(agreement_date)]
 historical_exchange_rates_curr[, month := month(agreement_date)]
 historical_exchange_rates_curr[, week := week(agreement_date)]
-
+agreement_date_df <- public_debt[, .(agreement_date, curr)] %>%
+    distinct(agreement_date, curr)
+#stop("check")
+historical_exchange_rates_curr <- merge(historical_exchange_rates_curr, agreement_date_df, by = c("agreement_date", "curr"), all= T)
+historical_exchange_rates_curr[curr == "USD", Exchange_Rate := 1]
+historical_exchange_rates_curr[, missing := as.numeric(is.na(Exchange_Rate))]
 historical_exchange_rates_curr[, Exchange_Rate := zoo::na.locf(Exchange_Rate, na.rm = F), by = c("currency", "year", "month", "week")]
 historical_exchange_rates_curr[, Exchange_Rate := zoo::na.locf(Exchange_Rate, na.rm = F), by = c("currency", "year", "month")]
+historical_exchange_rates_curr[, Exchange_Rate := zoo::na.locf(Exchange_Rate, na.rm = F, fromLast = T), by = c("currency", "year", "month", "week")]
+missing_historical_exchange_rates_curr <- historical_exchange_rates_curr[missing == 1 & is.na(Exchange_Rate),]
+#stop("check")
+#
 ## fill the reminder with the mean of the group if missing
-historical_exchange_rates_curr[, Exchange_Rate := ifelse(is.na(Exchange_Rate), mean(Exchange_Rate, na.rm = T), Exchange_Rate), by = c("currency", "year","month", "week")]
-historical_exchange_rates_curr[, Exchange_Rate := ifelse(is.na(Exchange_Rate), mean(Exchange_Rate, na.rm = T), Exchange_Rate), by = c("currency", "year","month")]
-inflation_data_usd <- fread("data/raw/inflation_data_usd.csv") %>%
-    janitor::clean_names() 
+#historical_exchange_rates_curr[, Exchange_Rate := ifelse(is.na(Exchange_Rate), mean(Exchange_Rate, na.rm = T), Exchange_Rate), by = c("currency", "year","month", "week")]
+#historical_exchange_rates_curr[, Exchange_Rate := ifelse(is.na(Exchange_Rate), mean(Exchange_Rate, na.rm = T), Exchange_Rate), by = c("currency", "year","month")]
 
-## merge by year
-historical_exchange_rates_curr <- merge(historical_exchange_rates_curr, inflation_data_usd, by = "year", all.x = T)
 
-hist_prices <- historical_exchange_rates_curr[!is.na(Exchange_Rate), .(curr, agreement_date, Exchange_Rate, amount, inflation_rate)] |>
+
+hist_prices <- historical_exchange_rates_curr[!is.na(Exchange_Rate), .(curr, agreement_date, Exchange_Rate)] |>
     distinct(curr, agreement_date, Exchange_Rate, .keep_all = T)
 
 
 public_debt_curr <- merge(public_debt, hist_prices ,
                           by =c("agreement_date", "curr"), all.x = TRUE, sort = F)
+public_debt_curr[, year := year(agreement_date)]
+# public_debt_curr[, month := month(agreement_date)]
+# public_debt_curr[, week := week(agreement_date)]
+# 
+# public_debt_curr[, Exchange_Rate := zoo::na.locf(Exchange_Rate, na.rm = F), by = c("curr", "year", "month", "week")]
+# public_debt_curr[, Exchange_Rate := zoo::na.locf(Exchange_Rate, na.rm = F), by = c("curr", "year", "month")]
+# ## replace missing by group mean
+# public_debt_curr[, Exchange_Rate := ifelse(is.na(Exchange_Rate), mean(Exchange_Rate, na.rm = T), Exchange_Rate), by = c("curr", "year","month")]
 
+inflation_data_usd <- fread("data/raw/inflation_data_usd.csv") %>%
+    janitor::clean_names() 
+
+public_debt_curr <- merge(public_debt_curr, 
+                          inflation_data_usd,
+                          by = "year",
+                          all.x = T)
 public_debt_curr[curr == "USD", Exchange_Rate := 1]
+
+# filter month = 7, week = 27
 
 public_debt_curr[, financed_amount := ifelse(is.na(revised_financed_amount), org_financed_amount, revised_financed_amount)]
 public_debt_curr[, financed_amount_usd := financed_amount/Exchange_Rate]

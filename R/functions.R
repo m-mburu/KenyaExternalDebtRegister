@@ -3,12 +3,12 @@ library(tidyverse)
 library(data.table)
 
 mycolors <-c(
-    "#386CB0", "#F0027F", "#BF5B17", "#1B9E77", "#D95F02", "#7570B3", 
+    "#386CB0", "#F0027F", "#283618", "#1B9E77", "#D95F02", "#7570B3", 
     "#66A61E", "#E6AB02", "#A6761D", "#C2DF23FF", "#38598CFF", "#482173FF", 
     "#85D54AFF", "#1E9B8AFF",  "#023047", "#ffb703", "#fb8500","#51C56AFF", "#606c38","#283618","#fefae0",
     "#dda15e","#bc6c25", "#FDE725FF", "#2D708EFF", 
     "#433E85FF", "#25858EFF", "#440154FF", "#7FC97F", "#BEAED4", 
-    "#FDC086","#8ecae6", "#219ebc", "#023047", "#ffb703", "#fb8500")
+    "#FDC086","#8ecae6", "#219ebc", "#023047", "#ffb703", "#fb8500",  "#BF5B17")
 
 plot_bar <- function(data, x, y, fill, title, xlab, ylab){
     

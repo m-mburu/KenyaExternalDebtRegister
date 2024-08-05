@@ -42,9 +42,9 @@ plot_bar(data = number_curr_df,
 
 
 ```{r}
-
+brks  <- hist(public_debt$duration_payment_yrs,plot = FALSE)$breaks
 ggplot(public_debt, aes(x = duration_payment_yrs)) +
-    geom_histogram(binwidth = 1) +
+    geom_histogram(breaks = brks) +
     facet_wrap(~president) +
     labs(title = "Loan duration by president", x = "Duration (years)", y = "Count") +
     theme_minimal()
@@ -68,44 +68,28 @@ plot_bar(data = cretor_category_df,
 ## Histogram of loan duration by creditor category
 
 ```{r}
-
+#brks2  <- hist(public_debt$duration_payment_yrs,plot = FALSE)$breaks
 ggplot(public_debt, aes(x = duration_payment_yrs)) +
-    geom_histogram(binwidth = 1) +
+    geom_histogram(breaks = brks) +
     facet_wrap(~creditor_category, scales = "free_y") +
     labs(title = "Loan duration by creditor category", x = "Duration (years)", y = "Count") +
     theme_minimal()
 ```
 
 
+
 ## Amount Borrowed by President in USD
-
-
-```{r}
-
-financed_amount = public_debt[, .(financed_amount_usd = sum(financed_amount_usd, na.rm = TRUE)), 
-                                  by = .(president)]
-
-p = ggplot(financed_amount, aes(x = reorder(president, -financed_amount_usd), y = financed_amount_usd/1000000000)) +
-    geom_col() +
-   # coord_flip() +
-    labs(title = "Amount borrowed by presidentin Billions USD", x = "President", y = "Amount borrowed") +
-    theme_minimal()
-p
-```
-
-
-Amount Borrowed by President in 2024 USD
 
 ```{r}
 
 # financed_amount_2024_usd
-
-amount_2024_usd <- public_debt[, .(amount_2024_usd = sum(financed_amount_2024_usd, na.rm = TRUE)), 
+financed_amount = public_debt[, .(financed_amount_usd = sum(financed_amount_usd, na.rm = TRUE)), 
                                   by = .(president, creditor_category)]
-amount_plot <- ggplot(amount_2024_usd, aes(x = reorder(president, -amount_2024_usd), y = amount_2024_usd/1000000000, fill =creditor_category )) +
+
+amount_plot <- ggplot(financed_amount, aes(x = reorder(president, -financed_amount_usd), y = financed_amount_usd/1000000000, fill =creditor_category )) +
     geom_col() +
     scale_fill_manual(values = mycolors) +
-    labs(title = "Amount borrowed by president in 2024 Billions USD", x = "President", y = "Amount borrowed") +
+    labs(title = "Amount borrowed by president in Billions USD", x = "President", y = "Amount borrowed") +
     theme_minimal()
 
 amount_plot
@@ -126,7 +110,7 @@ public_debt[, year := year(agreement_date)]
 # Compute the loan index by president within each year and president
 
 # sum by year and president
-public_debt_per_year <- public_debt[, .(financed_amount_usd = sum(financed_amount_2024_usd, na.rm = T)), by = .(president, year)]
+public_debt_per_year <- public_debt[, .(financed_amount_usd = sum(financed_amount_usd, na.rm = T)), by = .(president, year)]
 
 public_debt_per_year[, loan_index_by_president := rowid(president)]
 public_debt_per_year[, cummulative_debt := cumsum(financed_amount_usd), by = .(president)]
