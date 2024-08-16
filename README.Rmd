@@ -38,7 +38,7 @@ plot_bar(data = number_curr_df,
 ```
 
 
-## Loan Duration by President
+## Loan maturity time by President
 
 
 ```{r}
@@ -65,7 +65,7 @@ plot_bar(data = cretor_category_df,
 ```
 
 
-## Histogram of loan duration by creditor category
+## Histogram of loan maturity by creditor category
 
 ```{r}
 #brks2  <- hist(public_debt$duration_payment_yrs,plot = FALSE)$breaks

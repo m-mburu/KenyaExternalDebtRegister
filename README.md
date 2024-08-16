@@ -23,7 +23,7 @@ Kenya External Debt Register
 
 ![](README_files/figure-gfm/unnamed-chunk-1-1.png)<!-- -->
 
-## Loan Duration by President
+## Loan maturity time by President
 
 ![](README_files/figure-gfm/unnamed-chunk-2-1.png)<!-- -->
 
@@ -31,7 +31,7 @@ Kenya External Debt Register
 
 ![](README_files/figure-gfm/unnamed-chunk-3-1.png)<!-- -->
 
-## Histogram of loan duration by creditor category
+## Histogram of loan maturity by creditor category
 
 ![](README_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
 
@@ -53,5 +53,28 @@ Kenya External Debt Register
 
 ## Loans Still to Convert to USD
 
-| loan_ref_number | creditor_name | agreement_date | org_financed_amount | revised_financed_amount | curr |
-|:----------------|:--------------|:---------------|--------------------:|------------------------:|:-----|
+| loan_ref_number | creditor_name                         | agreement_date | org_financed_amount | revised_financed_amount | curr |
+|:----------------|:--------------------------------------|:---------------|--------------------:|------------------------:|:-----|
+| 1983029_1       | African Development Fund              | 1983-05-11     |              296513 |                  296513 | INR  |
+| 2000005_1       | Agence Francaise De Development       | 2000-07-04     |            15000000 |                13158482 | EUR  |
+| 2001007_1       | Government of China                   | 2001-07-16     |            50000000 |                50000000 | CNY  |
+| 2002005_1       | Government of China                   | 2002-04-24     |            50000000 |                50278653 | CNY  |
+| 2007013_1       | KUWAIT FUND FOR ARAB ECONOMIC         | 2007-12-13     |             6000000 |                 6000000 | KWD  |
+| 2010014_1       | International Development Association | 2010-07-05     |            15500000 |                15124563 | XDR  |
+| 2010015_1       | International Development Association | 2010-07-05     |           217400000 |               217400000 | XDR  |
+| 2010016_1       | International Development Association | 2010-07-05     |            66200000 |               123241901 | XDR  |
+| 2010016_2       | International Development Association | 2010-07-05     |            66200000 |               123241901 | XDR  |
+| 2010016_3       | International Development Association | 2010-07-05     |            66200000 |               123241901 | XDR  |
+| 2010013_1       | KUWAIT FUND FOR ARAB ECONOMIC         | 2010-09-20     |             5900000 |                 4614430 | KWD  |
+| 2010026_1       | Cooperation                           | 2010-11-25     |            36730000 |                31060530 | AED  |
+| 2011021_1       | International Development Association | 2011-02-27     |            35000000 |                34977024 | XDR  |
+| 2012012_1       | KUWAIT FUND FOR ARAB ECONOMIC         | 2012-01-01     |             4500000 |                 4500000 | KWD  |
+| 2013032_1       | Cooperation                           | 2013-09-23     |            36730000 |                36730000 | AED  |
+| 2015025_1       | International Development Association | 2015-01-01     |           131800000 |                74200000 | XDR  |
+| 2015012_1       | Exim Bank of China                    | 2015-08-31     |           867293233 |               866358433 | CNY  |
+| 2015035_1       | International Development Association | 2015-09-07     |            41300000 |                 2159695 | XDR  |
+| 2016042_1       | International Development Association | 2016-07-04     |           105900000 |               105900000 | XDR  |
+| 2016043_1       | International Development Association | 2016-07-04     |           106500000 |               106500000 | XDR  |
+| 2016047_1       | International Development Association | 2016-07-04     |            12800000 |                12800000 | XDR  |
+| 2017021_1       | International Development Association | 2017-05-29     |            73900000 |                73900000 | XDR  |
+| 2018005_1       | KUWAIT FUND FOR ARAB ECONOMIC         | 2018-05-15     |             7000000 |                 7000000 | KWD  |

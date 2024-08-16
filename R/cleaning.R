@@ -90,11 +90,14 @@ xdr_curr_df[, currency := "XDR"]
 xdr_curr_df <- xdr_curr_df[, .(agreement_date, currency,Exchange_Rate = as.numeric(u_s_dollar_equivalent))]
 
 historical_exchange_rates <- fread("data/raw/historical_exchange_rates.csv")
+
 names(historical_exchange_rates)
 # "Currency_Pair" "Day_Number"    "Month_Year"    "Exchange_Rate"
 historical_exchange_rates <- unique(historical_exchange_rates, by = c("Currency_Pair", "Day_Number", "Month_Year"))
 
 historical_exchange_rates[, agreement_date := as.Date(paste0(Day_Number,"-", Month_Year), format = "%d-%b - %Y")]
+## filter for less than todays date
+historical_exchange_rates <- historical_exchange_rates[agreement_date <= Sys.Date()]
 historical_exchange_rates[, currency := str_trim(gsub("USD to ", "", Currency_Pair))]
 
 historical_exchange_rates <- rbind(historical_exchange_rates, xdr_curr_df, fill = T)
@@ -105,7 +108,8 @@ currency = c("JPY",  "CHF", "SEK", "INR", "GBP", "CAD", "DKK", "EUR",
                         "XDR", "SAR", "CNY", "KRW", "AUD", "KWD", "AED")
 curr_dt = data.table(curr = curr, currency = currency)
 
-historical_exchange_rates_curr <- merge(historical_exchange_rates, curr_dt, by = "currency", all.x =T)
+historical_exchange_rates_curr <- merge(historical_exchange_rates, curr_dt, by = "currency", all.x =T, sort = F)
+#stop("check")
 ## zoo::na.locf to fill in the missing exchange rates by currency,year, month, week
 #create year month week columns
 historical_exchange_rates_curr[, year := year(agreement_date)]
@@ -117,10 +121,12 @@ agreement_date_df <- public_debt[, .(agreement_date, curr)] %>%
 historical_exchange_rates_curr <- merge(historical_exchange_rates_curr, agreement_date_df, by = c("agreement_date", "curr"), all= T)
 historical_exchange_rates_curr[curr == "USD", Exchange_Rate := 1]
 historical_exchange_rates_curr[, missing := as.numeric(is.na(Exchange_Rate))]
-historical_exchange_rates_curr[, Exchange_Rate := zoo::na.locf(Exchange_Rate, na.rm = F), by = c("currency", "year", "month", "week")]
-historical_exchange_rates_curr[, Exchange_Rate := zoo::na.locf(Exchange_Rate, na.rm = F), by = c("currency", "year", "month")]
-historical_exchange_rates_curr[, Exchange_Rate := zoo::na.locf(Exchange_Rate, na.rm = F, fromLast = T), by = c("currency", "year", "month", "week")]
+historical_exchange_rates_curr[, Exchange_Rate := zoo::na.locf(Exchange_Rate, na.rm = F), by = c("curr", "year", "month", "week")]
+historical_exchange_rates_curr[, missing2 := as.numeric(is.na(Exchange_Rate))]
+historical_exchange_rates_curr[, Exchange_Rate := zoo::na.locf(Exchange_Rate, na.rm = F), by = c("curr", "year", "month")]
+historical_exchange_rates_curr[, Exchange_Rate := zoo::na.locf(Exchange_Rate, na.rm = F, fromLast = T), by = c("curr", "year", "month", "week")]
 missing_historical_exchange_rates_curr <- historical_exchange_rates_curr[missing == 1 & is.na(Exchange_Rate),]
+all_missing <- historical_exchange_rates_curr[missing2 == 1]
 #stop("check")
 #
 ## fill the reminder with the mean of the group if missing
