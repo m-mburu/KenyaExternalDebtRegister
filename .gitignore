@@ -49,3 +49,31 @@ po/*~
 rsconnect/
 
 .env
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# R dependency library and rendered intermediates
+renv/library/
+renv/staging/
+*.html
+
+# Editors and operating systems
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Local scratch, extraction diagnostics, and rebuildable annual outputs
+tmp/
+logs/
+data/interim/
+data/validation/
+data/raw/register_*.pdf
+data/processed/*.csv
+data/processed/*.parquet
