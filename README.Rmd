@@ -28,6 +28,7 @@ debt[, maturity_date := as.Date(maturity_date)]
 reporting_date <- as.Date("2025-06-30")
 debt <- add_presidential_period(debt)
 debt <- add_maturity_bucket(debt, reporting_date)
+debt[, duration_years := as.numeric(maturity_date - agreement_date) / 365.25]
 
 active_debt <- debt[outstanding_june_2025_ksh > 0]
 total_outstanding <- sum(debt$outstanding_june_2025_ksh, na.rm = TRUE)
@@ -197,6 +198,33 @@ ggplot(maturity_stock, aes(maturity_bucket, outstanding_ksh)) +
     theme(axis.text.x = element_text(angle = 25, hjust = 1))
 ```
 
+## Contractual loan duration by presidential period
+
+The histogram measures the time between each loan's agreement date and contractual
+maturity date. It does not show the years remaining after June 2025. Presidential
+periods classify records by agreement date using non-overlapping terms.
+
+```{r duration-by-president, fig.height=7}
+plot_duration_histogram(
+    debt[!is.na(president)],
+    facet = president,
+    title = "Contractual loan duration by presidential agreement period",
+    subtitle = "Five-year bins; each observation is one loan record",
+    columns = 2
+)
+```
+
+## Contractual loan duration by creditor category
+
+```{r duration-by-creditor-category, fig.height=7}
+plot_duration_histogram(
+    debt,
+    facet = creditor_category,
+    title = "Contractual loan duration by creditor category",
+    subtitle = "Five-year bins; vertical scales vary by category",
+    columns = 3
+)
+```
 ## Outstanding stock associated with presidential periods
 
 This classification uses the agreement date and non-overlapping presidential

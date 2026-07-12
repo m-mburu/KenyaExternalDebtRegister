@@ -79,3 +79,32 @@ plot_kes_bar <- function(data, x, y, title, subtitle = NULL,
     if (horizontal) plot <- plot + ggplot2::coord_flip()
     plot
 }
+plot_duration_histogram <- function(data, facet, title, subtitle = NULL,
+                                    columns = 2, binwidth = 5) {
+    ggplot2::ggplot(data, ggplot2::aes(x = duration_years)) +
+        ggplot2::geom_histogram(
+            binwidth = binwidth,
+            boundary = 0,
+            fill = "#555555",
+            colour = "white",
+            linewidth = 0.2
+        ) +
+        ggplot2::facet_wrap(
+            ggplot2::vars({{ facet }}),
+            scales = "free_y",
+            ncol = columns
+        ) +
+        ggplot2::scale_x_continuous(
+            breaks = seq(0, 60, 10),
+            limits = c(0, 60),
+            expand = ggplot2::expansion(mult = c(0, 0.02))
+        ) +
+        ggplot2::labs(
+            title = title,
+            subtitle = subtitle,
+            x = "Contractual duration (years)",
+            y = "Loan records"
+        ) +
+        external_debt_theme() +
+        ggplot2::theme(legend.position = "none")
+}

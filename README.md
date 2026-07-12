@@ -62,7 +62,19 @@ prior-period adjustments can also change the closing balance.
 
 ![](README_files/figure-gfm/maturity-profile-1.png)<!-- -->
 
-## Outstanding stock associated with presidential periods
+## Contractual loan duration by presidential period
+
+The histogram measures the time between each loan’s agreement date and
+contractual maturity date. It does not show the years remaining after
+June 2025. Presidential periods classify records by agreement date using
+non-overlapping terms.
+
+![](README_files/figure-gfm/duration-by-president-1.png)<!-- -->
+
+## Contractual loan duration by creditor category
+
+![](README_files/figure-gfm/duration-by-creditor-category-1.png)<!-- -->
+\## Outstanding stock associated with presidential periods
 
 This classification uses the agreement date and non-overlapping
 presidential terms. It shows **June 2025 outstanding stock associated
