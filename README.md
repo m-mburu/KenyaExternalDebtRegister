@@ -1,80 +1,119 @@
-Kenya External Debt Register
+Kenya External Public Debt Register
 ================
 
-## Steps Taken to Develop Public Debt Register data set
+This project presents Kenya’s loan-level external public debt recorded
+by the National Treasury at **30 June 2025**. All debt-stock and
+fiscal-year movement charts are reported in **Kenya shillings (KES)**
+using the Treasury’s published KSh values; the analysis does not apply a
+separate exchange-rate conversion.
 
-- Navigated to the Kenya National Treasury website and downloaded the
-  public debt register data set.
-- Extracted the data set using python and saved it as a csv file Script:
-  Python/extract_data.py
-- Extracted historical exchange rates data set from the
-  <https://www.poundsterlinglive.com/bank-of-england-spot/historical-spot-exchange-rates/usd>
-  and saved it as a csv file. Script: Python/historical_currency_data.py
-- Downloaded USD inflation data set from
-  <https://www.in2013dollars.com/us/inflation/1980?amount=1> to convert
-  into todays equivalent dollars.
-- Downloaded IMF SDR data from
-  <https://www.imf.org/external/np/fin/data/rms_sdrv.aspx>. This will be
-  used to convert XDR currency to USD
-- Used the historical data to convert amounts to dollars and saved the
-  data set as a csv file. Script: R/cleaning.R
+Source: [National Treasury External Public Debt
+Register](https://www.treasury.go.ke/external-public-debt-register).
 
-## Currency Composition of Kenya’s External Debt
+## Headline position
 
-![](README_files/figure-gfm/unnamed-chunk-1-1.png)<!-- -->
+| Indicator                         |        Value |
+|:----------------------------------|-------------:|
+| External debt outstanding         | KES 5.488 tn |
+| Active loan records               |        1,008 |
+| Distinct active loan IDs          |        1,008 |
+| Principal repaid during FY2024/25 |  KES 50.4 bn |
+| Drawdowns during FY2024/25        | KES 189.6 bn |
 
-## Loan maturity time by President
+The loan-level closing balances total **KES 5.488 tn**. They differ from
+the printed Treasury total by only KSh 11, within the documented KSh 100
+rounding tolerance used by this project.
 
-![](README_files/figure-gfm/unnamed-chunk-2-1.png)<!-- -->
+## Outstanding debt by creditor category
 
-## Number of loans by creditor category
+![](README_files/figure-gfm/debt-by-creditor-category-1.png)<!-- -->
 
-![](README_files/figure-gfm/unnamed-chunk-3-1.png)<!-- -->
+| Creditor category     | Outstanding (KES bn) | Share of total |
+|:----------------------|---------------------:|---------------:|
+| Multilateral          |               3045.4 |          55.5% |
+| Commercial Bank       |               1261.5 |          23.0% |
+| Bilateral             |               1114.7 |          20.3% |
+| Buyers Credit         |                 39.5 |           0.7% |
+| Suppliers Credits     |                 14.4 |           0.3% |
+| Financial Institution |                 11.0 |           0.2% |
+| Export Credit         |                  1.9 |           0.0% |
 
-## Histogram of loan maturity by creditor category
+## Largest creditors
 
-![](README_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
+![](README_files/figure-gfm/largest-creditors-1.png)<!-- -->
 
-## Amount Borrowed by President in USD
+## Currency exposure measured in KES
 
-![](README_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
+The currency identifies the denomination of each loan. The bars show the
+KES value of the outstanding stock, not a sum of incompatible
+foreign-currency amounts.
 
-## Cummulative debt by president
+![](README_files/figure-gfm/currency-exposure-1.png)<!-- -->
 
-- Please note other cumulative debt might includes interests
-- This graph just looks how much a president borrowed when they were in
-  power. This is external debt
-- The CBK cumulative debt is the total debt that the country has
-  borrowed - payments
-- ***Have you guys checked how many loans EU gave to Kenya on
-  2002-12-31. First day of Kibaki presidency***
+## Repayments and drawdowns during FY2024/25
 
-![](README_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
+![](README_files/figure-gfm/annual-flows-1.png)<!-- -->
 
-## Loans Still to Convert to USD
+These are fiscal-year movements reported by Treasury. They should not be
+read as the complete change in the KES debt stock because valuation and
+prior-period adjustments can also change the closing balance.
 
-| loan_ref_number | creditor_name                         | agreement_date | org_financed_amount | revised_financed_amount | curr |
-|:----------------|:--------------------------------------|:---------------|--------------------:|------------------------:|:-----|
-| 1983029_1       | African Development Fund              | 1983-05-11     |              296513 |                  296513 | INR  |
-| 2000005_1       | Agence Francaise De Development       | 2000-07-04     |            15000000 |                13158482 | EUR  |
-| 2001007_1       | Government of China                   | 2001-07-16     |            50000000 |                50000000 | CNY  |
-| 2002005_1       | Government of China                   | 2002-04-24     |            50000000 |                50278653 | CNY  |
-| 2007013_1       | KUWAIT FUND FOR ARAB ECONOMIC         | 2007-12-13     |             6000000 |                 6000000 | KWD  |
-| 2010014_1       | International Development Association | 2010-07-05     |            15500000 |                15124563 | XDR  |
-| 2010015_1       | International Development Association | 2010-07-05     |           217400000 |               217400000 | XDR  |
-| 2010016_1       | International Development Association | 2010-07-05     |            66200000 |               123241901 | XDR  |
-| 2010016_2       | International Development Association | 2010-07-05     |            66200000 |               123241901 | XDR  |
-| 2010016_3       | International Development Association | 2010-07-05     |            66200000 |               123241901 | XDR  |
-| 2010013_1       | KUWAIT FUND FOR ARAB ECONOMIC         | 2010-09-20     |             5900000 |                 4614430 | KWD  |
-| 2010026_1       | Cooperation                           | 2010-11-25     |            36730000 |                31060530 | AED  |
-| 2011021_1       | International Development Association | 2011-02-27     |            35000000 |                34977024 | XDR  |
-| 2012012_1       | KUWAIT FUND FOR ARAB ECONOMIC         | 2012-01-01     |             4500000 |                 4500000 | KWD  |
-| 2013032_1       | Cooperation                           | 2013-09-23     |            36730000 |                36730000 | AED  |
-| 2015025_1       | International Development Association | 2015-01-01     |           131800000 |                74200000 | XDR  |
-| 2015012_1       | Exim Bank of China                    | 2015-08-31     |           867293233 |               866358433 | CNY  |
-| 2015035_1       | International Development Association | 2015-09-07     |            41300000 |                 2159695 | XDR  |
-| 2016042_1       | International Development Association | 2016-07-04     |           105900000 |               105900000 | XDR  |
-| 2016043_1       | International Development Association | 2016-07-04     |           106500000 |               106500000 | XDR  |
-| 2016047_1       | International Development Association | 2016-07-04     |            12800000 |                12800000 | XDR  |
-| 2017021_1       | International Development Association | 2017-05-29     |            73900000 |                73900000 | XDR  |
-| 2018005_1       | KUWAIT FUND FOR ARAB ECONOMIC         | 2018-05-15     |             7000000 |                 7000000 | KWD  |
+## Maturity profile
+
+![](README_files/figure-gfm/maturity-profile-1.png)<!-- -->
+
+## Contractual loan duration by presidential period
+
+The histogram measures the time between each loan’s agreement date and
+contractual maturity date. It does not show the years remaining after
+June 2025. Presidential periods classify records by agreement date using
+non-overlapping terms.
+
+![](README_files/figure-gfm/duration-by-president-1.png)<!-- -->
+
+## Contractual loan duration by creditor category
+
+![](README_files/figure-gfm/duration-by-creditor-category-1.png)<!-- -->
+\## Outstanding stock associated with presidential periods
+
+This classification uses the agreement date and non-overlapping
+presidential terms. It shows **June 2025 outstanding stock associated
+with agreements signed in each period**. It does not claim that a
+president personally borrowed the amount, nor does it measure total
+disbursements received during a presidency.
+
+![](README_files/figure-gfm/presidential-periods-1.png)<!-- -->
+
+## Methodology and validation
+
+The pipeline extracts only pages **3-29**, whose repeated heading is
+`EXTERNAL PUBLIC DEBT REGISTER AS AT END JUNE 2025 (KSHS)`. Pages 1-2
+contain summaries and pages 30-61 contain the separate FX register.
+
+PDF words are assigned to columns using their page coordinates. This
+avoids mixing wrapped loan titles, creditor names and two-line
+categories. The output retains the source page and row for every record.
+
+The validation checks found:
+
+- 1,041 records and 1,041 distinct loan IDs;
+- no duplicate loan/currency keys;
+- no missing required fields or invalid dates/currencies;
+- no unexpected creditor or borrower categories; and
+- a KSh 11 difference from the printed closing total.
+
+See [DATA_PIPELINE.md](DATA_PIPELINE.md) for extraction instructions and
+detailed validation evidence.
+
+## Limitations
+
+- The register reports principal-related stock and movements; it is not
+  a full fiscal-cost dataset and does not provide loan-level interest
+  payments here.
+- A row is treated as a loan record and IDs are counted distinctly. Some
+  economic facilities may still contain multiple tranches or currency
+  components.
+- Agreement-date classifications do not capture when a loan was
+  negotiated, approved, disbursed or ultimately spent.
+- KES values can change because of exchange-rate valuation as well as
+  borrowing and repayment flows.

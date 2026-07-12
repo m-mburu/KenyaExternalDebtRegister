@@ -1,132 +1,282 @@
 ---
-title: "Kenya External Debt Register"
-output: github_document
+title: "Kenya External Public Debt Register"
+output:
+  github_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = F,warnings = FALSE, message = FALSE)
-```
+knitr::opts_chunk$set(
+    echo = FALSE,
+    warning = FALSE,
+    message = FALSE,
+    fig.width = 9,
+    fig.height = 5.5,
+    dpi = 120
+)
 
-## Steps Taken to Develop Public Debt Register data set
-
-- Navigated to the Kenya National Treasury website and downloaded the public debt register data set.
-- Extracted the data set using python and saved it as a csv file Script: Python/extract_data.py
-- Extracted historical exchange rates data set from the https://www.poundsterlinglive.com/bank-of-england-spot/historical-spot-exchange-rates/usd and saved it as a csv file. Script: Python/historical_currency_data.py
-- Downloaded USD inflation data set from https://www.in2013dollars.com/us/inflation/1980?amount=1 to convert into todays equivalent dollars. 
-- Downloaded IMF SDR data from https://www.imf.org/external/np/fin/data/rms_sdrv.aspx. This will be used to convert XDR currency to USD
-- Used the historical data to convert amounts to dollars and saved the data set as a csv file. Script: R/cleaning.R
-
-## Currency Composition of Kenya's External Debt
-
-
-```{r,warnings = FALSE, message = FALSE}
-library(tidyverse)
 library(data.table)
-source("R/functions.R")
+library(ggplot2)
+library(scales)
+library(knitr)
 
+source("R/analysis_functions.R")
 
-public_debt <- fread("data/kenya_public_debt.csv")
-#public_debt <- public_debt[!is.na(amount_outstanding_as_at_30_06_2023_fx)]
-number_curr_df = public_debt[, .(number_curr =.N), 
-                             by = .(president, curr)]
+debt <- fread("data/processed/register_2025_ksh_loans.csv")
+debt[, agreement_date := as.Date(agreement_date)]
+debt[, maturity_date := as.Date(maturity_date)]
 
-plot_bar(data = number_curr_df, 
-         x = president, y = number_curr, fill = curr, 
-         title = "Number of loans by president",
-         xlab = "President", ylab = "Number of loans")
+reporting_date <- as.Date("2025-06-30")
+debt <- add_presidential_period(debt)
+debt <- add_maturity_bucket(debt, reporting_date)
+debt[, duration_years := as.numeric(maturity_date - agreement_date) / 365.25]
 
+active_debt <- debt[outstanding_june_2025_ksh > 0]
+total_outstanding <- sum(debt$outstanding_june_2025_ksh, na.rm = TRUE)
+total_repaid <- sum(debt$principal_repaid_ksh, na.rm = TRUE)
+total_drawdowns <- sum(debt$drawdowns_ksh, na.rm = TRUE)
+active_records <- nrow(active_debt)
+active_loans <- uniqueN(active_debt$loan_id)
 ```
 
+This project presents Kenya's loan-level external public debt recorded by the
+National Treasury at **30 June 2025**. All debt-stock and fiscal-year movement
+charts are reported in **Kenya shillings (KES)** using the Treasury's published
+KSh values; the analysis does not apply a separate exchange-rate conversion.
 
-## Loan maturity time by President
+Source: [National Treasury External Public Debt Register](https://www.treasury.go.ke/external-public-debt-register).
 
+## Headline position
 
-```{r}
-brks  <- hist(public_debt$duration_payment_yrs,plot = FALSE)$breaks
-ggplot(public_debt, aes(x = duration_payment_yrs)) +
-    geom_histogram(breaks = brks) +
-    facet_wrap(~president) +
-    labs(title = "Loan duration by president", x = "Duration (years)", y = "Count") +
-    theme_minimal()
+```{r headline-table}
+headline <- data.table(
+    Indicator = c(
+        "External debt outstanding",
+        "Active loan records",
+        "Distinct active loan IDs",
+        "Principal repaid during FY2024/25",
+        "Drawdowns during FY2024/25"
+    ),
+    Value = c(
+        kes_trillions(total_outstanding),
+        comma(active_records),
+        comma(active_loans),
+        kes_billions(total_repaid),
+        kes_billions(total_drawdowns)
+    )
+)
 
+kable(headline, align = c("l", "r"))
 ```
 
-## Number of loans by creditor category
+The loan-level closing balances total **`r kes_trillions(total_outstanding)`**.
+They differ from the printed Treasury total by only KSh 11, within the documented
+KSh 100 rounding tolerance used by this project.
 
-```{r}
+## Outstanding debt by creditor category
 
-cretor_category_df = public_debt[, .(number =.N), 
-                                 by = .(president, creditor_category)]
+```{r debt-by-creditor-category}
+category_stock <- active_debt[
+    , .(outstanding_ksh = sum(outstanding_june_2025_ksh, na.rm = TRUE)),
+    by = creditor_category
+][order(outstanding_ksh)]
 
-plot_bar(data = cretor_category_df, 
-         x = president, y = number, fill = creditor_category, 
-         title = "Number of loans by president",
-         xlab = "President", ylab = "Number of loans")
+plot_kes_bar(
+    category_stock,
+    x = reorder(creditor_category, outstanding_ksh),
+    y = outstanding_ksh,
+    title = "Multilateral lenders hold the largest share of external debt",
+    subtitle = "Outstanding principal at 30 June 2025"
+)
 ```
 
-
-## Histogram of loan maturity by creditor category
-
-```{r}
-#brks2  <- hist(public_debt$duration_payment_yrs,plot = FALSE)$breaks
-ggplot(public_debt, aes(x = duration_payment_yrs)) +
-    geom_histogram(breaks = brks) +
-    facet_wrap(~creditor_category, scales = "free_y") +
-    labs(title = "Loan duration by creditor category", x = "Duration (years)", y = "Count") +
-    theme_minimal()
+```{r category-share-table}
+category_table <- category_stock[
+    order(-outstanding_ksh),
+    .(
+        `Creditor category` = creditor_category,
+        `Outstanding (KES bn)` = round(outstanding_ksh / 1e9, 1),
+        `Share of total` = percent(
+            outstanding_ksh / total_outstanding,
+            accuracy = 0.1
+        )
+    )
+]
+kable(category_table, align = c("l", "r", "r"))
 ```
 
+## Largest creditors
 
+```{r largest-creditors}
+top_creditors <- active_debt[
+    , .(outstanding_ksh = sum(outstanding_june_2025_ksh, na.rm = TRUE)),
+    by = creditor_name
+][order(-outstanding_ksh)][1:12]
 
-## Amount Borrowed by President in USD
-
-```{r}
-
-# financed_amount_2024_usd
-financed_amount = public_debt[, .(financed_amount_usd = sum(financed_amount_usd, na.rm = TRUE)), 
-                                  by = .(president, creditor_category)]
-
-amount_plot <- ggplot(financed_amount, aes(x = reorder(president, -financed_amount_usd), y = financed_amount_usd/1000000000, fill =creditor_category )) +
-    geom_col() +
-    scale_fill_manual(values = mycolors) +
-    labs(title = "Amount borrowed by president in Billions USD", x = "President", y = "Amount borrowed") +
-    theme_minimal()
-
-amount_plot
-
+plot_kes_bar(
+    top_creditors[order(outstanding_ksh)],
+    x = reorder(creditor_name, outstanding_ksh),
+    y = outstanding_ksh,
+    title = "The twelve largest external creditors",
+    subtitle = "Outstanding principal at 30 June 2025",
+    fill = "#1B9E77"
+)
 ```
 
-## Cummulative debt by president
-- Please note other  cumulative debt might includes interests
-- This graph just looks how much a president borrowed when they were in power. This is external debt
-- The CBK cumulative debt is the total debt that the country has borrowed - payments
-- ***Have you guys checked how many loans EU gave to Kenya on 2002-12-31. First day of Kibaki presidency***
+## Currency exposure measured in KES
 
-```{r}
+The currency identifies the denomination of each loan. The bars show the KES
+value of the outstanding stock, not a sum of incompatible foreign-currency
+amounts.
 
+```{r currency-exposure}
+currency_stock <- active_debt[
+    , .(outstanding_ksh = sum(outstanding_june_2025_ksh, na.rm = TRUE)),
+    by = currency
+][order(outstanding_ksh)]
 
-setorder(public_debt, agreement_date)
-public_debt[, year := year(agreement_date)]
-# Compute the loan index by president within each year and president
-
-# sum by year and president
-public_debt_per_year <- public_debt[, .(financed_amount_usd = sum(financed_amount_usd, na.rm = T)), by = .(president, year)]
-
-public_debt_per_year[, loan_index_by_president := rowid(president)]
-public_debt_per_year[, cummulative_debt := cumsum(financed_amount_usd), by = .(president)]
-
-ggplot(public_debt_per_year, aes(x = loan_index_by_president, y = cummulative_debt/1000000000, color = president)) +
-    geom_line(linewidth = 1) +
-    scale_color_manual(values = mycolors) +
-    labs(title = "Cummulative debt  aquired by president", x = "Year", y = "Amount borrowed (Billion USD)") +
-    theme_minimal()+
-    theme(legend.position = "bottom")
-
+plot_kes_bar(
+    currency_stock,
+    x = reorder(currency, outstanding_ksh),
+    y = outstanding_ksh,
+    title = "Currency composition of outstanding external debt",
+    subtitle = "KES value at 30 June 2025",
+    fill = "#7570B3"
+)
 ```
 
-## Loans Still to Convert to USD
+## Repayments and drawdowns during FY2024/25
 
-```{r}
-public_debt_not_converted <- public_debt[is.na(financed_amount_usd), .(loan_ref_number,creditor_name,agreement_date, org_financed_amount,revised_financed_amount, curr)]
-knitr::kable(public_debt_not_converted)
+```{r annual-flows}
+annual_flows <- data.table(
+    movement = factor(
+        c("Principal repaid", "Drawdowns"),
+        levels = c("Principal repaid", "Drawdowns")
+    ),
+    amount_ksh = c(total_repaid, total_drawdowns)
+)
+
+ggplot(annual_flows, aes(movement, amount_ksh, fill = movement)) +
+    geom_col(width = 0.6, show.legend = FALSE) +
+    scale_fill_manual(values = c("Principal repaid" = "#D95F02", "Drawdowns" = "#386CB0")) +
+    scale_y_continuous(labels = label_number(scale = 1e-9, suffix = " bn"),
+                       expand = expansion(mult = c(0, 0.08))) +
+    labs(
+        title = "Principal repayments exceeded drawdowns during FY2024/25",
+        x = NULL, y = "Amount (KES billions)"
+    ) +
+    external_debt_theme()
 ```
+
+These are fiscal-year movements reported by Treasury. They should not be read as
+the complete change in the KES debt stock because valuation and prior-period
+adjustments can also change the closing balance.
+
+## Maturity profile
+
+```{r maturity-profile}
+maturity_stock <- active_debt[
+    , .(outstanding_ksh = sum(outstanding_june_2025_ksh, na.rm = TRUE)),
+    by = maturity_bucket
+][order(maturity_bucket)]
+
+maturity_stock[, maturity_bucket := factor(
+    maturity_bucket,
+    levels = c("Matured", "Within 1 year", "1-3 years", "3-5 years",
+               "5-10 years", "More than 10 years")
+)]
+
+ggplot(maturity_stock, aes(maturity_bucket, outstanding_ksh)) +
+    geom_col(fill = "#E6AB02", width = 0.7) +
+    scale_y_continuous(labels = label_number(scale = 1e-9, suffix = " bn"),
+                       expand = expansion(mult = c(0, 0.08))) +
+    labs(
+        title = "Maturity profile of debt outstanding at June 2025",
+        subtitle = "Based on contractual maturity dates in the register",
+        x = NULL, y = "Outstanding debt (KES billions)"
+    ) +
+    external_debt_theme() +
+    theme(axis.text.x = element_text(angle = 25, hjust = 1))
+```
+
+## Contractual loan duration by presidential period
+
+The histogram measures the time between each loan's agreement date and contractual
+maturity date. It does not show the years remaining after June 2025. Presidential
+periods classify records by agreement date using non-overlapping terms.
+
+```{r duration-by-president, fig.height=7}
+plot_duration_histogram(
+    debt[!is.na(president)],
+    facet = president,
+    title = "Contractual loan duration by presidential agreement period",
+    subtitle = "Five-year bins; each observation is one loan record",
+    columns = 2
+)
+```
+
+## Contractual loan duration by creditor category
+
+```{r duration-by-creditor-category, fig.height=7}
+plot_duration_histogram(
+    debt,
+    facet = creditor_category,
+    title = "Contractual loan duration by creditor category",
+    subtitle = "Five-year bins; vertical scales vary by category",
+    columns = 3
+)
+```
+## Outstanding stock associated with presidential periods
+
+This classification uses the agreement date and non-overlapping presidential
+terms. It shows **June 2025 outstanding stock associated with agreements signed
+in each period**. It does not claim that a president personally borrowed the
+amount, nor does it measure total disbursements received during a presidency.
+
+```{r presidential-periods}
+president_stock <- active_debt[
+    !is.na(president),
+    .(outstanding_ksh = sum(outstanding_june_2025_ksh, na.rm = TRUE)),
+    by = president
+][order(outstanding_ksh)]
+
+plot_kes_bar(
+    president_stock,
+    x = reorder(president, outstanding_ksh),
+    y = outstanding_ksh,
+    title = "Current stock by period in which agreements were signed",
+    subtitle = "Outstanding at 30 June 2025; classification based on agreement date",
+    fill = "#386CB0"
+)
+```
+
+## Methodology and validation
+
+The pipeline extracts only pages **3-29**, whose repeated heading is
+`EXTERNAL PUBLIC DEBT REGISTER AS AT END JUNE 2025 (KSHS)`. Pages 1-2 contain
+summaries and pages 30-61 contain the separate FX register.
+
+PDF words are assigned to columns using their page coordinates. This avoids
+mixing wrapped loan titles, creditor names and two-line categories. The output
+retains the source page and row for every record.
+
+The validation checks found:
+
+- 1,041 records and 1,041 distinct loan IDs;
+- no duplicate loan/currency keys;
+- no missing required fields or invalid dates/currencies;
+- no unexpected creditor or borrower categories; and
+- a KSh 11 difference from the printed closing total.
+
+See [DATA_PIPELINE.md](DATA_PIPELINE.md) for extraction instructions and detailed
+validation evidence.
+
+## Limitations
+
+- The register reports principal-related stock and movements; it is not a full
+  fiscal-cost dataset and does not provide loan-level interest payments here.
+- A row is treated as a loan record and IDs are counted distinctly. Some economic
+  facilities may still contain multiple tranches or currency components.
+- Agreement-date classifications do not capture when a loan was negotiated,
+  approved, disbursed or ultimately spent.
+- KES values can change because of exchange-rate valuation as well as borrowing
+  and repayment flows.
